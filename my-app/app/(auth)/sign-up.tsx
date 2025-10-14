@@ -1,0 +1,238 @@
+import React, {useState} from "react";
+import {
+    View,
+    Text,
+    Pressable,
+    ScrollView,
+    SafeAreaView,
+    TouchableOpacity,
+    Image,
+} from "react-native";
+import { useRouter } from "expo-router";
+import {IUserCreate} from "@/models/account";
+import images from "@/constants/images";
+import FormField from "@/components/form-fields";
+import CustomButton from "@/components/custom-button";
+import {pickImage} from "@/utils/pickimage";
+import {pickUserFile} from "@/utils/pickUserFile";
+
+
+const userInitState : IUserCreate = {
+    firstName: "",
+    lastName: "",
+    email: "",
+    password: "",
+    imageUrl: "",
+};
+
+const SignUp = () => {
+    //Зберігає дані користувача
+    const [user, setUser] = useState<IUserCreate>(userInitState);
+    //Зберігає помилки
+    const [errors, setErrors] = useState<string[]>([]);
+    const [confirmPassword, setConfirmPassword] = useState<string>('');
+
+    const validationChange = (isValid: boolean, fieldKey: string) => {
+        if (isValid && errors.includes(fieldKey)) {
+            setErrors(errors.filter(x => x !== fieldKey))
+        } else if (!isValid && !errors.includes(fieldKey)) {
+            setErrors(state => [...state, fieldKey])
+        }
+    };
+
+    const submit = async () => {
+        console.log("Submit form", user)
+    };
+
+    const handlePickUserFile = async () => {
+        const fileData = await pickUserFile();
+        if (fileData) {
+            setUser({
+                ...user,
+                firstName: fileData.firstName || "",
+                lastName: fileData.lastName || "",
+                email: fileData.email || "",
+                password: fileData.password || "",
+                imageUrl: fileData.imageUrl || "",
+            });
+            setConfirmPassword(fileData.password || "");
+        }
+    };
+
+    const router = useRouter();
+
+    return (
+        <SafeAreaView className="bg-primary h-full">
+            <ScrollView
+                contentContainerStyle={{ flexGrow: 1 }}
+                keyboardShouldPersistTaps="handled"
+                className="bg-gray-50 dark:bg-gray-900 px-6 py-10"
+            >
+                <View className="w-full gap-2 flex items-center h-full px-4 my-6" style={{ minHeight: 400 }}>
+                    <Text className="text-3xl font-bold text-center text-blue-600 mb-8">
+                        Створити акаунт
+                    </Text>
+
+                    <TouchableOpacity
+                        className=' mb-5 self-center mx-2 w-[200px] h-[200px] rounded-full overflow-hidden '
+                        onPress={async () => setUser({ ...user, imageUrl: await pickImage() })}
+                    >
+                        <Image source={user.imageUrl ? { uri: user.imageUrl } : images.noimage} className=" object-cover w-full h-full" />
+                    </TouchableOpacity>
+
+                    <FormField
+                        placeholder="Вкажіть прізвище"
+                        title="Прізвище"
+                        value={user.lastName}
+                        handleChangeText={(e) => setUser({ ...user, lastName: e })}
+                        onValidationChange={validationChange}
+                        rules={[
+                            {
+                                rule: 'required',
+                                message: "Прізвище є обов'язковим"
+                            },
+                            {
+                                rule: 'min',
+                                value: 2,
+                                message: 'Прізвище має містити мінімум 2 символи'
+                            },
+                            {
+                                rule: 'max',
+                                value: 40,
+                                message: 'Прізвище має містити максимум 40 символів'
+                            }
+                        ]}
+                    />
+
+                    <FormField
+                        placeholder="Вкажіть ваше ім'я"
+                        title="Ім'я"
+                        value={user.firstName}
+                        handleChangeText={(e) => setUser({ ...user, firstName: e })}
+                        onValidationChange={validationChange}
+                        rules={[
+                            {
+                                rule: 'required',
+                                message: 'Ім\'я є обов\'язковим'
+                            },
+                            {
+                                rule: 'min',
+                                value: 2,
+                                message: 'Ім\'я має містити мінімум 2 символи '
+                            },
+                            {
+                                rule: 'max',
+                                value: 40,
+                                message: 'Ім\'я має містити максимум 40 символів '
+                            }
+                        ]}
+                    />
+
+                    <FormField
+                        placeholder="Enter your email"
+                        title="Email"
+                        value={user.email}
+                        handleChangeText={(e) => setUser({ ...user, email: e })}
+                        keyboardType="email-address"
+                        rules={[
+                            {
+                                rule: 'required',
+                                message: 'Email є обов\'язковим'
+                            },
+                            {
+                                rule: 'regexp',
+                                value: '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
+                                message: 'Invalid email address'
+                            },
+                        ]}
+                        onValidationChange={validationChange}
+                    />
+
+                    <FormField
+                        placeholder="Вкажіть пароль"
+                        title="Пароль"
+                        value={user.password}
+                        handleChangeText={(e) => setUser({ ...user, password: e })}
+                        onValidationChange={validationChange}
+                        rules={[
+                            {
+                                rule: 'required',
+                                message: 'Пароль є обов\'язковим'
+                            },
+                            {
+                                rule: 'regexp',
+                                value: '[0-9]',
+                                message: 'Пароль має містити цифри'
+                            },
+                            {
+                                rule: 'regexp',
+                                value: '[!@#$%^&*(),.?":{}|<>]',
+                                message: 'Пароль має містити спец символи '
+                            },
+                            {
+                                rule: 'min',
+                                value: 6,
+                                message: 'Пароль має містити мін 6 символів'
+                            },
+                            {
+                                rule: 'max',
+                                value: 40,
+                                message: 'Максимальна довжина паролю 40 символів'
+                            }
+                        ]}
+                    />
+
+                    <FormField
+                        placeholder="Повторити пароль"
+                        title="Повторити пароль"
+                        value={confirmPassword}
+                        handleChangeText={(e) => setConfirmPassword(e)}
+                        onValidationChange={validationChange}
+                        rules={[
+                            {
+                                rule: 'required',
+                                message: 'Вкажіть пароль'
+                            },
+                            {
+                                rule: 'equals',
+                                value: user.password,
+                                message: 'Паролі не співпадають'
+                            },
+                        ]}
+                    />
+
+                    <CustomButton
+                        title="Завантажити дані з файлу"
+                        handlePress={handlePickUserFile}
+                        containerStyles="mt-5 w-full bg-blue-500 rounded-xl"
+                    />
+
+                    <CustomButton
+                        title="Зареєструватися"
+                        handlePress={submit}
+                        containerStyles="mt-4 w-full bg-slate-500 rounded-xl"
+                    />
+
+                    {/* Перехід на Sign In */}
+                    <Pressable onPress={() => router.push("/sign-in")}>
+                        <Text className="text-center text-gray-600 dark:text-gray-300 mt-10">
+                            Уже маєте акаунт?{" "}
+                            <Text className="text-blue-600 font-semibold">Увійти</Text>
+                        </Text>
+                    </Pressable>
+
+                    <Pressable
+                        onPress={() => router.replace("/")}
+                        className="bg-gray-700 px-6 py-3 rounded-2xl active:bg-gray-950 mt-5"
+                    >
+                        <Text className="text-center text-white text-base font-semibold">
+                            Повернутися на головну
+                        </Text>
+                    </Pressable>
+                </View>
+            </ScrollView>
+        </SafeAreaView>
+    );
+};
+
+export default SignUp;

@@ -1,6 +1,7 @@
 import { View, Text, TextInput, Pressable, Alert } from "react-native";
 import { useState } from "react";
 import { useRouter } from "expo-router";
+import CustomButton from "@/components/custom-button";
 
 const SignInScreen = () => {
     const router = useRouter();
@@ -73,17 +74,7 @@ const SignInScreen = () => {
                 />
             </View>
 
-            <Pressable
-                onPress={handleSignIn}
-                disabled={isSubmitting}
-                className={`${
-                    isSubmitting ? "bg-blue-400" : "bg-blue-600 active:bg-blue-700"
-                } py-3 rounded-2xl mb-4`}
-            >
-                <Text className="text-white text-center text-base font-semibold">
-                    {isSubmitting ? "Вхід..." : "Увійти"}
-                </Text>
-            </Pressable>
+            <CustomButton title={isSubmitting ? "Вхід..." : "Увійти"} handlePress={handleSignIn} containerStyles="mt-4 w-full bg-blue-700 rounded-xl" />
 
             <Pressable onPress={() => router.push("/sign-up")}>
                 <Text className="text-center text-gray-600 dark:text-gray-300">

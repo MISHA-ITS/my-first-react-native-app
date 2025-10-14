@@ -12,6 +12,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { router } from "expo-router";
 
 export default function HomeScreen() {
+
     const onPressSignIn = () => {
         router.replace("/sign-in");
         console.log("sign in");
