@@ -20,7 +20,49 @@ public static class Seeder
         {
             if (!await roleManager.RoleExistsAsync(role))
             {
-                await roleManager.CreateAsync(new RoleEntity (role));
+                await roleManager.CreateAsync(new RoleEntity(role));
+            }
+        }
+
+        // Seed Admin User
+        if (!dbContext.Users.Any())
+        {
+            var adminUser = new UserEntity
+            {
+                UserName = "admin@mail.com",
+                Email = "admin@mail.com",
+                FirstName = "Ivasyk",
+                LastName = "Telesyk",
+            };
+
+            var result = await userManager.CreateAsync(adminUser, "qwerty");
+
+            if (result.Succeeded)
+            {
+                await userManager.AddToRoleAsync(adminUser, Constants.Roles.Admin);
+            }
+            else
+            {
+                throw new Exception("Failed to create admin user during seeding.");
+            }
+
+            var user = new UserEntity
+            {
+                UserName = "user@mal.com",
+                Email = "user@mal.com",
+                FirstName = "Koty",
+                LastName = "Goroshko",
+            };
+
+            var userResult = await userManager.CreateAsync(user, "qwerty");
+
+            if (userResult.Succeeded)
+            {
+                await userManager.AddToRoleAsync(user, Constants.Roles.User);
+            }
+            else
+            {
+                throw new Exception("Failed to create user during seeding.");
             }
         }
     }
