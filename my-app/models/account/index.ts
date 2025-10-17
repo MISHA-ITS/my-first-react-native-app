@@ -5,3 +5,8 @@ export interface IUserCreate {
     password: string;
     imageUrl: string | undefined;
 }
+
+export interface IUserLogin {
+    email: string;
+    password: string;
+}

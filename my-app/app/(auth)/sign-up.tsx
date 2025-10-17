@@ -16,7 +16,6 @@ import CustomButton from "@/components/custom-button";
 import {pickImage} from "@/utils/pickimage";
 import {pickUserFile} from "@/utils/pickUserFile";
 
-
 const userInitState : IUserCreate = {
     firstName: "",
     lastName: "",
@@ -26,6 +25,8 @@ const userInitState : IUserCreate = {
 };
 
 const SignUp = () => {
+    const router = useRouter();
+
     //Зберігає дані користувача
     const [user, setUser] = useState<IUserCreate>(userInitState);
     //Зберігає помилки
@@ -58,8 +59,6 @@ const SignUp = () => {
             setConfirmPassword(fileData.password || "");
         }
     };
-
-    const router = useRouter();
 
     return (
         <SafeAreaView className="bg-primary h-full">
@@ -201,11 +200,10 @@ const SignUp = () => {
                         ]}
                     />
 
-                    <CustomButton
-                        title="Завантажити дані з файлу"
-                        handlePress={handlePickUserFile}
-                        containerStyles="mt-5 w-full bg-blue-500 rounded-xl"
-                    />
+                    {/* Завантажити дані з файлу */}
+                    <Pressable onPress={handlePickUserFile}>
+                        <Text className="text-blue-600 font-semibold mt-5">Завантажити дані з файлу</Text>
+                    </Pressable>
 
                     <CustomButton
                         title="Зареєструватися"
@@ -215,20 +213,17 @@ const SignUp = () => {
 
                     {/* Перехід на Sign In */}
                     <Pressable onPress={() => router.push("/sign-in")}>
-                        <Text className="text-center text-gray-600 dark:text-gray-300 mt-10">
+                        <Text className="text-center text-gray-600 dark:text-gray-300">
                             Уже маєте акаунт?{" "}
                             <Text className="text-blue-600 font-semibold">Увійти</Text>
                         </Text>
                     </Pressable>
 
-                    <Pressable
-                        onPress={() => router.replace("/")}
-                        className="bg-gray-700 px-6 py-3 rounded-2xl active:bg-gray-950 mt-5"
-                    >
-                        <Text className="text-center text-white text-base font-semibold">
-                            Повернутися на головну
-                        </Text>
-                    </Pressable>
+                    <CustomButton
+                        title="Повернутися на головну"
+                        handlePress={() => router.replace("/")}
+                        containerStyles="mt-4 w-full border-2 border-black-600 bg-white-500 rounded-xl"
+                    />
                 </View>
             </ScrollView>
         </SafeAreaView>

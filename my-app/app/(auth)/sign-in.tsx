@@ -1,48 +1,33 @@
-import { View, Text, TextInput, Pressable, Alert } from "react-native";
-import { useState } from "react";
+import { View, Text, Pressable} from "react-native";
+import React, { useState } from "react";
 import { useRouter } from "expo-router";
 import CustomButton from "@/components/custom-button";
+import {IUserLogin} from "@/models/account";
+import FormField from "@/components/form-fields";
 
-const SignInScreen = () => {
+const userInitState : IUserLogin = {
+    email: "",
+    password: "",
+};
+
+const SignIn = () => {
     const router = useRouter();
 
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
-    const [isSubmitting, setIsSubmitting] = useState(false);
+    //Зберігає дані користувача
+    const [user, setUser] = useState<IUserLogin>(userInitState);
+    //Зберігає помилки
+    const [errors, setErrors] = useState<string[]>([]);
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-    const handleSignIn = async () => {
-        if (!email || !password) {
-            Alert.alert("Помилка", "Будь ласка, заповніть усі поля.");
-            return;
+    const validationChange = (isValid: boolean, fieldKey: string) => {
+        if (isValid && errors.includes(fieldKey)) {
+            setErrors(errors.filter(x => x !== fieldKey))
+        } else if (!isValid && !errors.includes(fieldKey)) {
+            setErrors(state => [...state, fieldKey])
         }
+    };
 
-        if (!emailRegex.test(email)) {
-            Alert.alert("Помилка", "Невірний формат email.");
-            return;
-        }
-
-        if (password.length < 6) {
-            Alert.alert("Помилка", "Пароль має містити щонайменше 6 символів.");
-            return;
-        }
-
-        try {
-            setIsSubmitting(true);
-
-            // 🔹 Імітація запиту до сервера
-            await new Promise((resolve) => setTimeout(resolve, 1000));
-
-            Alert.alert("Успішний вхід", `Вітаємо, ${email}!`);
-            console.log(`User email: ${email}`)
-            console.log(`User password: ${password}`)
-            router.replace("/"); // Повернення на головну після успішного входу
-        } catch (error: any) {
-            Alert.alert("Помилка входу", error.message || "Щось пішло не так");
-        } finally {
-            setIsSubmitting(false);
-        }
+    const submit = async () => {
+        console.log("Submit form", user)
     };
 
     return (
@@ -51,30 +36,64 @@ const SignInScreen = () => {
                 Увійти до акаунта
             </Text>
 
-            <View className="mb-4">
-                <Text className="text-gray-700 dark:text-gray-200 mb-2">Email</Text>
-                <TextInput
-                    className="border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-                    placeholder="Введіть email"
-                    value={email}
-                    onChangeText={setEmail}
-                    autoCapitalize="none"
-                    keyboardType="email-address"
-                />
-            </View>
+            <FormField
+                placeholder="Enter your email"
+                title="Email"
+                value={user.email}
+                handleChangeText={(e) => setUser({ ...user, email: e })}
+                keyboardType="email-address"
+                rules={[
+                    {
+                        rule: 'required',
+                        message: 'Email є обов\'язковим'
+                    },
+                    {
+                        rule: 'regexp',
+                        value: '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
+                        message: 'Invalid email address'
+                    },
+                ]}
+                onValidationChange={validationChange}
+            />
 
-            <View className="mb-6">
-                <Text className="text-gray-700 dark:text-gray-200 mb-2">Пароль</Text>
-                <TextInput
-                    className="border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-                    placeholder="Введіть пароль"
-                    value={password}
-                    onChangeText={setPassword}
-                    secureTextEntry
-                />
-            </View>
+            <FormField
+                placeholder="Вкажіть пароль"
+                title="Пароль"
+                value={user.password}
+                handleChangeText={(e) => setUser({ ...user, password: e })}
+                onValidationChange={validationChange}
+                rules={[
+                    {
+                        rule: 'required',
+                        message: 'Пароль є обов\'язковим'
+                    },
+                    {
+                        rule: 'regexp',
+                        value: '[0-9]',
+                        message: 'Пароль має містити цифри'
+                    },
+                    {
+                        rule: 'regexp',
+                        value: '[!@#$%^&*(),.?":{}|<>]',
+                        message: 'Пароль має містити спец символи '
+                    },
+                    {
+                        rule: 'min',
+                        value: 6,
+                        message: 'Пароль має містити мін 6 символів'
+                    },
+                    {
+                        rule: 'max',
+                        value: 40,
+                        message: 'Максимальна довжина паролю 40 символів'
+                    }
+                ]}
+            />
 
-            <CustomButton title={isSubmitting ? "Вхід..." : "Увійти"} handlePress={handleSignIn} containerStyles="mt-4 w-full bg-blue-700 rounded-xl" />
+            <CustomButton
+                title="Увійти"
+                handlePress={submit}
+                containerStyles="mt-10 w-full bg-blue-700 rounded-xl" />
 
             <Pressable onPress={() => router.push("/sign-up")}>
                 <Text className="text-center text-gray-600 dark:text-gray-300">
@@ -83,16 +102,13 @@ const SignInScreen = () => {
                 </Text>
             </Pressable>
 
-            <Pressable
-                onPress={() => router.replace("/")}
-                className="bg-gray-700 px-6 py-3 rounded-2xl active:bg-gray-950 mt-10"
-            >
-                <Text className="text-center text-white text-base font-semibold">
-                    Повернутися на головну
-                </Text>
-            </Pressable>
+            <CustomButton
+                title="Повернутися на головну"
+                handlePress={() => router.replace("/")}
+                containerStyles="mt-4 w-full border-2 border-black-600 bg-white-500 rounded-xl"
+            />
         </View>
     );
 };
 
-export default SignInScreen;
+export default SignIn;
