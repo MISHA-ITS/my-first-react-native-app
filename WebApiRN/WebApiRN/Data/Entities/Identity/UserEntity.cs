@@ -10,4 +10,5 @@ public class UserEntity : IdentityUser<long>
     public DateTime DateCreated { get; set; } = DateTime.UtcNow;
 
     public virtual ICollection<UserRoleEntity>? UserRoles { get; set; }
+    public virtual ICollection<UserLoginEntity>? UserLogins { get; set; }
 }
