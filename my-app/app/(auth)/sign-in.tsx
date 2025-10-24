@@ -4,11 +4,14 @@ import { useRouter } from "expo-router";
 import CustomButton from "@/components/custom-button";
 import {IUserLogin} from "@/models/account";
 import FormField from "@/components/form-fields";
+import axios from "axios";
 
 const userInitState : IUserLogin = {
     email: "",
     password: "",
 };
+
+const API_URL = "http://10.0.2.2:5175/api/account";
 
 const SignIn = () => {
     const router = useRouter();
@@ -17,6 +20,9 @@ const SignIn = () => {
     const [user, setUser] = useState<IUserLogin>(userInitState);
     //Зберігає помилки
     const [errors, setErrors] = useState<string[]>([]);
+
+    const [loading, setLoading] = useState(false);
+
 
     const validationChange = (isValid: boolean, fieldKey: string) => {
         if (isValid && errors.includes(fieldKey)) {
@@ -28,6 +34,37 @@ const SignIn = () => {
 
     const submit = async () => {
         console.log("Submit form", user)
+
+        setLoading(true);
+
+        try {
+            const response = await axios.post(`${API_URL}/Login`, user, {
+                headers: { "Content-Type": "application/json" },
+                timeout: 5000, // 5 секунд на очікування відповіді
+            });
+
+            const data = response.data;
+            console.log("Login success:", data);
+
+            // ✅ Збереження токена (наприклад, якщо використовуєш expo-secure-store)
+            // await SecureStore.setItemAsync("token", data.token);
+
+            console.log("Успіх", "Вхід виконано успішно!");
+            router.replace("/"); // переходь на головну чи профіль
+        } catch (error: any) {
+            console.error("Login error:", error);
+
+            if (axios.isAxiosError(error)) {
+                const message =
+                    error.response?.data?.message ||
+                    "Невірний email або пароль, або сервер недоступний";
+                console.log("Помилка входу", message);
+            } else {
+                console.log("Помилка", "Невідома помилка");
+            }
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
