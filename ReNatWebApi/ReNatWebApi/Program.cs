@@ -21,8 +21,10 @@ builder.Services.AddControllers();
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+// Додаємо CORS політику
 builder.Services.AddCors(options =>
 {
+    // Дозволяємо всі запити з будь-якого джерела
     options.AddPolicy("AllowAll", policy =>
     {
         policy
@@ -43,15 +45,22 @@ builder.Services.AddIdentity<UserEntity, RoleEntity>(options =>
     .AddEntityFrameworkStores<AppDbContext>()
     .AddDefaultTokenProviders();
 
+// Налаштування аутентифікації з використанням JWT
 builder.Services.AddAuthentication(options =>
 {
+    // Вказуємо схему аутентифікації за замовчуванням
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    // Вказуємо схему виклику за замовчуванням
     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
 })
+// Налаштування параметрів JWT Bearer
 .AddJwtBearer(options =>
 {
+    // Вимикаємо вимогу HTTPS для метаданих (корисно для розробки)
     options.RequireHttpsMetadata = false;
+    // Зберігаємо токен у контексті аутентифікації
     options.SaveToken = true;
+    // Налаштування параметрів валідації токена
     options.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateIssuer = false,
@@ -64,14 +73,20 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
+// Додаємо Swagger для документування API
 var assemblyName = typeof(LoginModel).Assembly.GetName().Name;
 
+// Налаштування Swagger з підтримкою JWT авторизації
 builder.Services.AddSwaggerGen(opt =>
 {
+    // Додаємо коментарі XML у Swagger
     var fileDoc = $"{assemblyName}.xml";
+    // Отримуємо повний шлях до XML файлу з коментарями
     var filePath = Path.Combine(AppContext.BaseDirectory, fileDoc);
+    // Додаємо файл коментарів у налаштування Swagger
     opt.IncludeXmlComments(filePath);
 
+    // Налаштування JWT авторизації у Swagger
     opt.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Description = "JWT Authorization header using the Bearer scheme.",
@@ -81,6 +96,7 @@ builder.Services.AddSwaggerGen(opt =>
         Scheme = "bearer"
     });
 
+    // Вимагаємо авторизацію для доступу до захищених ендпоінтів
     opt.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         {
@@ -110,6 +126,7 @@ var app = builder.Build();
 app.UseSwagger();
 app.UseSwaggerUI();
 
+// Використовуємо CORS політику
 app.UseCors("AllowAll");
 
 app.UseAuthentication();
@@ -121,8 +138,10 @@ var dir = builder.Configuration["ImagesDir"];
 string path = Path.Combine(Directory.GetCurrentDirectory(), dir);
 Directory.CreateDirectory(path);
 
+// Налаштування для обслуговування статичних файлів (зображень)
 app.UseStaticFiles(new StaticFileOptions
 {
+    //Вказуємо фізичний провайдер файлів і шлях запиту
     FileProvider = new PhysicalFileProvider(path),
     RequestPath = $"/{dir}"
 });
