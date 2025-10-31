@@ -39,6 +39,13 @@ const AuthLayout = () => {
                     tabBarIcon: ({ color }) => <MaterialIcons name="app-registration" size={28} color={color} />,
                 }}
             />
+            <Tabs.Screen
+                name="profile"
+                options={{
+                    title: 'Профіль',
+                    tabBarIcon: ({ color }) => <MaterialIcons name="account-circle" size={28} color={color} />,
+                }}
+            />A
         </Tabs>
     );
 }
