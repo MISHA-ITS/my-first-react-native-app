@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Core.Models.Account;
 using Core.Models.Seeder;
+using Core.Models.User;
 using Domain.Entities.Identity;
 
 namespace Core.Mapper;
@@ -17,5 +18,10 @@ public class UserMapper : Profile
         CreateMap<RegisterModel, UserEntity>()
             .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.Email))
             .ForMember(dest => dest.Image, opt => opt.Ignore()); // файл зображення обробляється окремо
+
+        // User mapping (для відображення інформації про користувача)
+        CreateMap<UserEntity, UserModel>()
+            .ForMember(dest => dest.Roles, opt => opt.Ignore());
+        CreateMap<UserModel, UserEntity>();
     }
 }
