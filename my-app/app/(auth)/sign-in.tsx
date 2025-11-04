@@ -1,28 +1,30 @@
-import { View, Text, Pressable} from "react-native";
-import React, { useState } from "react";
-import { useRouter } from "expo-router";
-import CustomButton from "@/components/custom-button";
-import {IUserLogin} from "@/models/account";
+import {Dimensions, SafeAreaView, ScrollView, Text, View} from "react-native";
+import {ILoginRequest} from "@/types/account/ILoginRequest";
+import {useState} from "react";
+import {useRouter} from "expo-router";
+import {showMessage} from "react-native-flash-message";
+import {useLoginMutation} from "@/services/apiAccount";
 import FormField from "@/components/form-fields";
-import axios from "axios";
-
-const userInitState : IUserLogin = {
-    email: "",
-    password: "",
-};
-
-const API_URL = "http://10.0.2.2:5175/api/account";
+import CustomButton from "@/components/custom-button";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { jwtDecode } from "jwt-decode";
 
 const SignIn = () => {
-    const router = useRouter();
+    const [login, {isLoading, error: loginError}] = useLoginMutation();
 
-    //Зберігає дані користувача
-    const [user, setUser] = useState<IUserLogin>(userInitState);
+    console.log("login", isLoading, loginError);
+
+    const initState: ILoginRequest = {
+        email: '',
+        password: ''
+    };
+
+    const [form, setForm] = useState<ILoginRequest>(initState);
+
     //Зберігає помилки
     const [errors, setErrors] = useState<string[]>([]);
 
-    const [loading, setLoading] = useState(false);
-
+    const router = useRouter();
 
     const validationChange = (isValid: boolean, fieldKey: string) => {
         if (isValid && errors.includes(fieldKey)) {
@@ -33,119 +35,109 @@ const SignIn = () => {
     };
 
     const submit = async () => {
-        console.log("Submit form", user)
-
-        setLoading(true);
+        if (errors.length !== 0) {
+            // console.error(errors);
+            showMessage({
+                message: "Правильно заповніть всі поля",
+                type: "info",
+            });
+            return;
+        }
 
         try {
-            const response = await axios.post(`${API_URL}/Login`, user, {
-                headers: { "Content-Type": "application/json" },
-                timeout: 5000, // 5 секунд на очікування відповіді
+            const result = await login(form).unwrap(); // <- отримаєш чисту відповідь { token: "..." }
+
+            console.log("Login success:", result);
+
+            // Зберігаємо токен
+            await AsyncStorage.setItem("token", result.token);
+
+            // ✅ Після успішного входу перенаправляй на профіль
+            router.replace("/(auth)/profile");
+
+            const user = jwtDecode(result.token);
+            console.log("User info from token:", user);
+
+        } catch (error) {
+            console.log("Login error:", error);
+            showMessage({
+                message: "Невірна пошта або пароль",
+                type: "danger",
             });
-
-            const data = response.data;
-            console.log("Login success:", data);
-
-            // ✅ Збереження токена (наприклад, якщо використовуєш expo-secure-store)
-            // await SecureStore.setItemAsync("token", data.token);
-
-            console.log("Успіх", "Вхід виконано успішно!");
-            router.replace("/"); // переходь на головну чи профіль
-        } catch (error: any) {
-            console.error("Login error:", error);
-
-            if (axios.isAxiosError(error)) {
-                const message =
-                    error.response?.data?.message ||
-                    "Невірний email або пароль, або сервер недоступний";
-                console.log("Помилка входу", message);
-            } else {
-                console.log("Помилка", "Невідома помилка");
-            }
-        } finally {
-            setLoading(false);
         }
-    };
+    }
 
     return (
-        <View className="flex-1 justify-center bg-gray-50 dark:bg-gray-900 px-6">
-            <Text className="text-3xl font-bold text-center text-blue-600 mb-8">
-                Увійти до акаунта
-            </Text>
+        <SafeAreaView className="bg-primary h-full">
+            <ScrollView>
+                <View className="w-full gap-2 flex justify-center items-center h-full px-4 my-6"
+                      style={{
+                          minHeight: Dimensions.get('window').height - 100,
+                      }}>
+                    <View className="flex flex-row items-center justify-center">
+                        {/* <Image source={images.pizzaLogo} className=" w-[40px] h-[34px]" resizeMode="contain" /> */}
+                        <Text className="mt-2 text-4xl font-pbold font-bold text-secondary">АТБ</Text>
 
-            <FormField
-                placeholder="Enter your email"
-                title="Email"
-                value={user.email}
-                handleChangeText={(e) => setUser({ ...user, email: e })}
-                keyboardType="email-address"
-                rules={[
-                    {
-                        rule: 'required',
-                        message: 'Email є обов\'язковим'
-                    },
-                    {
-                        rule: 'regexp',
-                        value: '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
-                        message: 'Invalid email address'
-                    },
-                ]}
-                onValidationChange={validationChange}
-            />
+                    </View>
 
-            <FormField
-                placeholder="Вкажіть пароль"
-                title="Пароль"
-                value={user.password}
-                handleChangeText={(e) => setUser({ ...user, password: e })}
-                onValidationChange={validationChange}
-                rules={[
-                    {
-                        rule: 'required',
-                        message: 'Пароль є обов\'язковим'
-                    },
-                    {
-                        rule: 'regexp',
-                        value: '[0-9]',
-                        message: 'Пароль має містити цифри'
-                    },
-                    {
-                        rule: 'regexp',
-                        value: '[!@#$%^&*(),.?":{}|<>]',
-                        message: 'Пароль має містити спец символи '
-                    },
-                    {
-                        rule: 'min',
-                        value: 6,
-                        message: 'Пароль має містити мін 6 символів'
-                    },
-                    {
-                        rule: 'max',
-                        value: 40,
-                        message: 'Максимальна довжина паролю 40 символів'
+                    <Text className="text-2xl font-semibold text-slate-4Ad00 mt-10 font-psemibold">
+                        Вхід у наш додаток
+                    </Text>
+                    {loginError &&
+                        <View
+                            className="p-4 w-full rounded-lg bg-red-50" >
+                            <Text className=" text-center text-red-800 dark:bg-gray-800 dark:text-red-400 font-medium">
+                                Дані вказано не вірно
+                            </Text>
+                        </View>
                     }
-                ]}
-            />
 
-            <CustomButton
-                title="Увійти"
-                handlePress={submit}
-                containerStyles="mt-10 w-full bg-blue-700 rounded-xl" />
 
-            <Pressable onPress={() => router.push("/sign-up")}>
-                <Text className="text-center text-gray-600 dark:text-gray-300">
-                    Немає акаунта?{" "}
-                    <Text className="text-blue-600 font-semibold">Зареєструватися</Text>
-                </Text>
-            </Pressable>
+                    <FormField
+                        placeholder="Вкажіть пошту"
+                        title="Електронна пошта"
+                        value={form.email}
+                        handleChangeText={(e) => setForm({...form, email: e})}
+                        keyboardType="email-address"
+                        rules={[
+                            // {
+                            //     rule: 'required',
+                            //     message: "Пошта є обов'язкова"
+                            // },
+                            // {
+                            //     rule: 'regexp',
+                            //     value: '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
+                            //     message: "Пошта є некоректна"
+                            // },
+                        ]}
+                        onValidationChange={validationChange}
+                    />
 
-            <CustomButton
-                title="Повернутися на головну"
-                handlePress={() => router.replace("/")}
-                containerStyles="mt-4 w-full border-2 border-black-600 bg-white-500 rounded-xl"
-            />
-        </View>
+                    <FormField
+                        placeholder="Вкажіть пароль"
+                        title="Пароль"
+
+                        value={form.password}
+                        handleChangeText={(e) => setForm({...form, password: e})}
+                        onValidationChange={validationChange}
+                        rules={[
+                            // {
+                            //     rule: 'required',
+                            //     message: 'Пароль є обов\'язковим'
+                            // }
+                        ]}
+                    />
+
+                    <CustomButton title="Вхід" handlePress={submit}
+                                  containerStyles="mt-7 w-full bg-slate-500 rounded-xl"/>
+
+                    <CustomButton title="Реєстрація" handlePress={() => {
+                        router.replace("/(auth)/sign-up")
+                    }} containerStyles="mt-4 w-full bg-red-700 rounded-xl"/>
+                </View>
+            </ScrollView>
+        </SafeAreaView>
     );
-};
+}
 
 export default SignIn;

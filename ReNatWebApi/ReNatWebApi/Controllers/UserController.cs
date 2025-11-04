@@ -29,5 +29,4 @@ public class UserController(IMapper mapper, IImageService imageService,
 
         return Ok(model);
     }
-
 }

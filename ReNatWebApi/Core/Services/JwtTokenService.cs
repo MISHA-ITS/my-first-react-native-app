@@ -5,6 +5,7 @@ using Microsoft.IdentityModel.Tokens;
 using Domain.Entities.Identity;
 using Core.Interfaces;
 using Microsoft.Extensions.Configuration;
+using Core.Constants;
 
 namespace Core.Services;
 
@@ -22,9 +23,11 @@ public class JwtTokenService
         //створюємо список даних про користувача (claims), які будуть збережені у токені
         var claims = new List<Claim>
         {
-            new Claim("email", user.Email),
-            new Claim("name", $"{user.LastName} {user.FirstName}"),
-            new Claim("image", $"{user.Image}")
+            new Claim("id", user.Id.ToString()),
+            new Claim("email", user.Email ?? string.Empty),
+            new Claim("firstName", user.FirstName ?? string.Empty),
+            new Claim("lastName", user.LastName ?? string.Empty),
+            new Claim("image", user.Image ?? string.Empty)
         };
 
         //отримуємо ролі користувача і додаємо їх у список claims

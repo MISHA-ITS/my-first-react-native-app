@@ -14,7 +14,11 @@ import images from "@/constants/images";
 import FormField from "@/components/form-fields";
 import CustomButton from "@/components/custom-button";
 import {pickImage} from "@/utils/pickimage";
+import { showMessage } from "react-native-flash-message";
 import {pickUserFile} from "@/utils/pickUserFile";
+import {getFileFromUriAsync} from "@/utils/getFileFromUriAsync";
+import {IRegisterRequest} from "@/types/account/IRegisterRequest";
+import {useRegisterMutation} from "@/services/apiAccount";
 
 const userInitState : IUserCreate = {
     firstName: "",
@@ -25,13 +29,18 @@ const userInitState : IUserCreate = {
 };
 
 const SignUp = () => {
-    const router = useRouter();
-
+    //Метод register - для реєстрації
+    //boolean isLoading - Для відслідковування запиту
+    //error - об'єкт, який містить помилки
+    const [register, {isLoading, error: registerError}] = useRegisterMutation();
+    console.log("Register", isLoading, registerError);
     //Зберігає дані користувача
     const [user, setUser] = useState<IUserCreate>(userInitState);
     //Зберігає помилки
     const [errors, setErrors] = useState<string[]>([]);
     const [confirmPassword, setConfirmPassword] = useState<string>('');
+
+    const router = useRouter();
 
     const validationChange = (isValid: boolean, fieldKey: string) => {
         if (isValid && errors.includes(fieldKey)) {
@@ -42,8 +51,41 @@ const SignUp = () => {
     };
 
     const submit = async () => {
-        console.log("Submit form", user)
-    };
+        if (errors.length !== 0) {
+            console.error(errors);
+            showMessage({
+                message: "Правильно заповніть всі поля",
+                type: "info",
+            });
+            return;
+        }
+        if(user.imageUrl) {
+            const fileImage =
+                await getFileFromUriAsync(user.imageUrl);
+            console.log("Submit form-- file",  fileImage);
+            try {
+                const model : IRegisterRequest = {...user, imageFile: fileImage};
+                await register(model);
+                router.replace("/(auth)");
+
+                // const url = "https://spr311.itstep.click/api/account/register";
+                // console.log("Submit form-- model",  model);
+                // // const url = "http://10.0.2.2:5165/api/account/register";
+                // const formData = serialize(model)
+                // console.log("Submit form-- url",  url);
+                // await axios.post(url, formData,
+                //     {
+                //         headers: {
+                //             'Content-Type': 'multipart/form-data'
+                //         }
+                //     });
+            }
+            catch(ex) {
+                console.log("Submit form-- error", ex);
+            }
+        }
+        console.log("Submit form", user);
+    }
 
     const handlePickUserFile = async () => {
         const fileData = await pickUserFile();
