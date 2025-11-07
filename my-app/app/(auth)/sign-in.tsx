@@ -45,18 +45,20 @@ const SignIn = () => {
         }
 
         try {
-            const result = await login(form).unwrap(); // <- отримаєш чисту відповідь { token: "..." }
+            const result = await login(form).unwrap(); // <- повертає { token: "..." }
 
             console.log("Login success:", result);
 
-            // Зберігаємо токен
+            // ✅ Зберігаємо токен
             await AsyncStorage.setItem("token", result.token);
 
-            // ✅ Після успішного входу перенаправляй на профіль
-            router.replace("/(auth)/profile");
-
+            // ✅ Декодуємо користувача з токена
             const user = jwtDecode(result.token);
+            await AsyncStorage.setItem("user", JSON.stringify(user));
             console.log("User info from token:", user);
+
+            // ✅ Після успішного входу переходимо на сторінку профілю
+            router.replace("/(auth)/profile");
 
         } catch (error) {
             console.log("Login error:", error);

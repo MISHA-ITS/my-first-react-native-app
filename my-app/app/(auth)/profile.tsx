@@ -2,14 +2,12 @@ import { SafeAreaView, ScrollView, View, Text, Image, Dimensions } from "react-n
 import CustomButton from "@/components/custom-button";
 import images from "@/constants/images";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { jwtDecode } from "jwt-decode";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import {IUserFromToken} from "@/types/account/IUserFromToken";
-import {BASE_URL} from "@/constants/Urls";
+import { IUserFromToken } from "@/types/account/IUserFromToken";
+import { BASE_URL } from "@/constants/Urls";
 
 const Profile = () => {
-
     const [user, setUser] = useState<IUserFromToken | null>(null);
     const router = useRouter();
 
@@ -22,10 +20,27 @@ const Profile = () => {
                     return;
                 }
 
-                const decoded = jwtDecode<IUserFromToken>(token);
-                setUser(decoded);
+                const response = await fetch(`${BASE_URL}/api/Account/profile`, {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        "Content-Type": "application/json",
+                    },
+                });
+
+                console.log("Profile status:", response.status);
+
+                if (response.status === 401) {
+                    await AsyncStorage.removeItem("token");
+                    router.replace("/(auth)/sign-in");
+                    return;
+                }
+
+                const data = await response.json();
+                console.log("Profile response:", data);
+
+                setUser(data);
             } catch (error) {
-                console.error("Error loading user:", error);
+                console.error("❌ Error loading profile:", error);
             }
         };
 
@@ -34,16 +49,19 @@ const Profile = () => {
 
     const logout = async () => {
         await AsyncStorage.removeItem("token");
+        setUser(null); // очищаємо стан
         router.replace("/(auth)/sign-in");
     };
 
     if (!user) {
         return (
             <SafeAreaView className="bg-primary h-full flex justify-center items-center">
-                <Text className="text-white text-lg">Завантаження профілю...</Text>
+                <Text className="text-blue-950 text-lg">Завантаження профілю...</Text>
             </SafeAreaView>
         );
     }
+
+    const imageUri = user.image?.replace("http://localhost", BASE_URL);
 
     return (
         <SafeAreaView className="bg-primary h-full">
@@ -57,25 +75,18 @@ const Profile = () => {
                     {/* Фото профілю */}
                     <View className="w-[200px] h-[200px] rounded-full overflow-hidden mb-6 border-4 border-slate-400">
                         <Image
-                            source={
-                                user.image
-                                    ? { uri: `${BASE_URL}/images/${user.image}` }
-                                    : images.noimage
-                            }
+                            source={user.image ? { uri: imageUri } : images.noimage}
                             className="w-full h-full object-cover"
                             resizeMode="cover"
                         />
                     </View>
 
-                    {/* Ім'я користувача */}
-                    <Text className="text-2xl font-bold text-white mb-2">
+                    <Text className="text-2xl font-bold text-black mb-2">
                         {user.firstName} {user.lastName}
                     </Text>
 
-                    {/* Email */}
-                    <Text className="text-base text-gray-300 mb-6">{user.email}</Text>
+                    <Text className="text-base text-gray-950 mb-6">{user.email}</Text>
 
-                    {/* Інформаційні поля */}
                     <View className="bg-slate-800 rounded-2xl p-5 w-full">
                         <Text className="text-white text-lg font-semibold mb-3">
                             Основна інформація
@@ -97,7 +108,6 @@ const Profile = () => {
                         </View>
                     </View>
 
-                    {/* Кнопки */}
                     <View className="w-full mt-8">
                         <CustomButton
                             title="Редагувати профіль"
