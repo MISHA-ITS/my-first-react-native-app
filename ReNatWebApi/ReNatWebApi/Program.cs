@@ -114,6 +114,8 @@ builder.Services.AddSwaggerGen(opt =>
 
 });
 
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IImageService, ImageService>();
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 
@@ -129,15 +131,9 @@ app.UseSwaggerUI();
 // Використовуємо CORS політику
 app.UseCors("AllowAll");
 
-app.UseAuthentication();
-app.UseAuthorization();
-
-app.MapControllers();
-
 var dir = builder.Configuration["ImagesDir"];
 string path = Path.Combine(Directory.GetCurrentDirectory(), dir);
 Directory.CreateDirectory(path);
-
 // Налаштування для обслуговування статичних файлів (зображень)
 app.UseStaticFiles(new StaticFileOptions
 {
@@ -145,6 +141,11 @@ app.UseStaticFiles(new StaticFileOptions
     FileProvider = new PhysicalFileProvider(path),
     RequestPath = $"/{dir}"
 });
+
+app.UseAuthentication();
+app.UseAuthorization();
+
+app.MapControllers();
 
 //await app.SeedData();
 

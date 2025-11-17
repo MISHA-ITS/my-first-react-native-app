@@ -1,18 +1,21 @@
 import {Dimensions, SafeAreaView, ScrollView, Text, View} from "react-native";
 import {ILoginRequest} from "@/types/account/ILoginRequest";
-import {useState} from "react";
+import { useState} from "react";
 import {useRouter} from "expo-router";
 import {showMessage} from "react-native-flash-message";
 import {useLoginMutation} from "@/services/apiAccount";
 import FormField from "@/components/form-fields";
 import CustomButton from "@/components/custom-button";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { jwtDecode } from "jwt-decode";
+import {login, logout} from "@/store/authSlice";
+import {useAppDispatch, useAppSelector} from "@/store";
+
 
 const SignIn = () => {
-    const [login, {isLoading, error: loginError}] = useLoginMutation();
+    const [loginPOST, {isLoading, error: loginError}] = useLoginMutation();
 
-    console.log("login", isLoading, loginError);
+    const dispatch = useAppDispatch();
+
+    const {user} = useAppSelector(globalState => globalState.auth);
 
     const initState: ILoginRequest = {
         email: '',
@@ -45,27 +48,27 @@ const SignIn = () => {
         }
 
         try {
-            const result = await login(form).unwrap(); // <- повертає { token: "..." }
+            const result = await loginPOST(form);
+            if (result.error) {
+                console.error("Problema with login", result.error);
+            } else {
+                const {token} = result.data;
+                dispatch(login(token));
+                router.replace("/(auth)/profile");
+            }
+            //console.log("Submit form-- result",  result);
+            //
+        } catch (ex) {
+            console.log("Submit form-- error", ex);
+        }
+    }
 
-            console.log("Login success:", result);
-
-            // ✅ Зберігаємо токен
-            await AsyncStorage.setItem("token", result.token);
-
-            // ✅ Декодуємо користувача з токена
-            const user = jwtDecode(result.token);
-            await AsyncStorage.setItem("user", JSON.stringify(user));
-            console.log("User info from token:", user);
-
-            // ✅ Після успішного входу переходимо на сторінку профілю
-            router.replace("/(auth)/profile");
-
-        } catch (error) {
-            console.log("Login error:", error);
-            showMessage({
-                message: "Невірна пошта або пароль",
-                type: "danger",
-            });
+    const handleLogout = async () => {
+        try {
+            dispatch(logout());
+        }
+        catch (ex) {
+            console.log("Logout error", ex);
         }
     }
 
@@ -76,15 +79,23 @@ const SignIn = () => {
                       style={{
                           minHeight: Dimensions.get('window').height - 100,
                       }}>
-                    <View className="flex flex-row items-center justify-center">
-                        {/* <Image source={images.pizzaLogo} className=" w-[40px] h-[34px]" resizeMode="contain" /> */}
-                        <Text className="mt-2 text-4xl font-pbold font-bold text-secondary">АТБ</Text>
-
-                    </View>
 
                     <Text className="text-2xl font-semibold text-slate-4Ad00 mt-10 font-psemibold">
                         Вхід у наш додаток
                     </Text>
+
+                    <View className="flex flex-row items-center justify-center">
+                        <Text className="mt-2 text-4xl font-pbold font-bold text-secondary">My React Native</Text>
+
+                    </View>
+
+                    {
+                        user &&
+                        <Text className="text-2xl font-semibold text-blue-800 mt-10 font-psemibold">
+                            {user?.email}
+                        </Text>
+                    }
+
                     {loginError &&
                         <View
                             className="p-4 w-full rounded-lg bg-red-50" >
@@ -130,12 +141,19 @@ const SignIn = () => {
                         ]}
                     />
 
-                    <CustomButton title="Вхід" handlePress={submit}
-                                  containerStyles="mt-7 w-full bg-slate-500 rounded-xl"/>
+                    { !user &&
+                        <CustomButton title="Вхід" handlePress={submit}
+                                      containerStyles="mt-7 w-full bg-green-500 rounded-xl"/>
+                    }
+
+                    { user &&
+                        <CustomButton title="Вихід" handlePress={handleLogout}
+                                      containerStyles="mt-7 w-full bg-red-500 rounded-xl"/>
+                    }
 
                     <CustomButton title="Реєстрація" handlePress={() => {
                         router.replace("/(auth)/sign-up")
-                    }} containerStyles="mt-4 w-full bg-red-700 rounded-xl"/>
+                    }} containerStyles="mt-4 w-full bg-slate-700 rounded-xl"/>
                 </View>
             </ScrollView>
         </SafeAreaView>

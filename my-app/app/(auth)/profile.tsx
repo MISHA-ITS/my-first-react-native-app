@@ -1,55 +1,26 @@
 import { SafeAreaView, ScrollView, View, Text, Image, Dimensions } from "react-native";
 import CustomButton from "@/components/custom-button";
 import images from "@/constants/images";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
-import { useEffect, useState } from "react";
-import { IUserFromToken } from "@/types/account/IUserFromToken";
+import { useEffect } from "react";
+import { useAppDispatch, useAppSelector } from "@/store";
+import { logout, loadUserFromStorage } from "@/store/authSlice";
 import { BASE_URL } from "@/constants/Urls";
 
 const Profile = () => {
-    const [user, setUser] = useState<IUserFromToken | null>(null);
+    const { user } = useAppSelector((state) => state.auth);
+    const dispatch = useAppDispatch();
     const router = useRouter();
 
     useEffect(() => {
-        const loadUser = async () => {
-            try {
-                const token = await AsyncStorage.getItem("token");
-                if (!token) {
-                    router.replace("/(auth)/sign-in");
-                    return;
-                }
+        // Якщо користувача немає в стані — повертаємо на логін
+        if (!user) {
+            router.replace("/(auth)/sign-in");
+        }
+    }, [user]);
 
-                const response = await fetch(`${BASE_URL}/api/Account/profile`, {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                        "Content-Type": "application/json",
-                    },
-                });
-
-                console.log("Profile status:", response.status);
-
-                if (response.status === 401) {
-                    await AsyncStorage.removeItem("token");
-                    router.replace("/(auth)/sign-in");
-                    return;
-                }
-
-                const data = await response.json();
-                console.log("Profile response:", data);
-
-                setUser(data);
-            } catch (error) {
-                console.error("❌ Error loading profile:", error);
-            }
-        };
-
-        loadUser();
-    }, []);
-
-    const logout = async () => {
-        await AsyncStorage.removeItem("token");
-        setUser(null); // очищаємо стан
+    const handleLogout = () => {
+        dispatch(logout());
         router.replace("/(auth)/sign-in");
     };
 
@@ -61,7 +32,9 @@ const Profile = () => {
         );
     }
 
-    const imageUri = user.image?.replace("http://localhost", BASE_URL);
+    const imageUri = user.image ? `${BASE_URL}/Images/${user.image}` : null;
+
+    console.log("imageUri:", imageUri);
 
     return (
         <SafeAreaView className="bg-primary h-full">
@@ -72,51 +45,28 @@ const Profile = () => {
                         minHeight: Dimensions.get("window").height - 100,
                     }}
                 >
-                    {/* Фото профілю */}
-                    <View className="w-[200px] h-[200px] rounded-full overflow-hidden mb-6 border-4 border-slate-400">
+                    <View className="w-[200px] h-[200px] rounded-full overflow-hidden mt-10 mb-6 border-4 border-slate-400 bg-white">
                         <Image
-                            source={user.image ? { uri: imageUri } : images.noimage}
-                            className="w-full h-full object-cover"
+                            source={imageUri ? { uri: imageUri } : images.noimage}
+                            className="w-full h-full"
                             resizeMode="cover"
                         />
                     </View>
 
-                    <Text className="text-2xl font-bold text-black mb-2">
-                        {user.firstName} {user.lastName}
-                    </Text>
-
-                    <Text className="text-base text-gray-950 mb-6">{user.email}</Text>
+                    <Text className="text-2xl font-bold text-black mb-6">{user.firstName} {user.lastName}</Text>
 
                     <View className="bg-slate-800 rounded-2xl p-5 w-full">
-                        <Text className="text-white text-lg font-semibold mb-3">
-                            Основна інформація
-                        </Text>
-
+                        <Text className="text-white text-lg font-semibold mb-3">Основна інформація</Text>
                         <View className="mb-3">
-                            <Text className="text-gray-400 text-sm">Ім'я</Text>
-                            <Text className="text-white text-base">{user.firstName}</Text>
-                        </View>
-
-                        <View className="mb-3">
-                            <Text className="text-gray-400 text-sm">Прізвище</Text>
-                            <Text className="text-white text-base">{user.lastName}</Text>
-                        </View>
-
-                        <View className="mb-3">
-                            <Text className="text-gray-400 text-sm">Електронна пошта</Text>
-                            <Text className="text-white text-base">{user.email}</Text>
+                            <Text className="text-white text-base">Електронна пошта: {user.email}</Text>
+                            <Text className="text-gray-400 text-sm">Ролі: {user.roles?.join(", ")}</Text>
                         </View>
                     </View>
 
                     <View className="w-full mt-8">
                         <CustomButton
-                            title="Редагувати профіль"
-                            handlePress={() => console.log("Edit profile")}
-                            containerStyles="w-full bg-slate-500 rounded-xl mb-3"
-                        />
-                        <CustomButton
                             title="Вийти"
-                            handlePress={logout}
+                            handlePress={handleLogout}
                             containerStyles="w-full bg-red-700 rounded-xl"
                         />
                     </View>

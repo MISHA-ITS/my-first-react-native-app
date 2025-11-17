@@ -2,10 +2,8 @@
 using Core.Constants;
 using Core.Interfaces;
 using Core.Models.Account;
-using Core.Models.User;
 using Domain.Entities.Identity;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
@@ -14,7 +12,8 @@ namespace ReNatWebApi.Controllers;
 [Route("api/[controller]")]
 [ApiController]
 public class AccountController(IJwtTokenService jwtTokenService,
-        IMapper mapper, IImageService imageService,
+        IMapper mapper, IAuthService authService,
+        IUserService userService, IImageService imageService,
         UserManager<UserEntity> userManager) : ControllerBase
 {
     [HttpPost("login")]
@@ -78,33 +77,16 @@ public class AccountController(IJwtTokenService jwtTokenService,
     [HttpGet("profile")]
     public async Task<IActionResult> GetProfile()
     {
-        // Отримуємо ID користувача з JWT токена
-        var userId = User.FindFirst("id")?.Value;
-        if (string.IsNullOrEmpty(userId))
-            return Unauthorized();
+        var userId = await authService.GetUserByIdAsync();
+        var userInfo = await userService.GetUserByIdAsync(userId);
+        return Ok(userInfo);
+    }
 
-        // Знаходимо користувача в базі
-        var user = await userManager.FindByIdAsync(userId);
-        if (user == null)
-            return NotFound();
-
-        // Мапимо сутність у DTO
-        var model = mapper.Map<UserModel>(user);
-
-        // Отримуємо ролі користувача
-        var roles = await userManager.GetRolesAsync(user);
-        model.Roles = roles.ToArray();
-
-        // Додаємо повний шлях до зображення (якщо є)
-        if (!string.IsNullOrEmpty(model.Image))
-        {
-            // формує повний URL на основі імені файлу
-            var request = HttpContext.Request;
-            var baseUrl = $"{request.Scheme}://{request.Host}";
-            model.Image = $"{baseUrl}/images/{model.Image}";
-        }
-
-        // Повертаємо чистий DTO
-        return Ok(model);
+    [Authorize(Roles="Admin")]
+    [HttpGet("usersList")]
+    public async Task<IActionResult> GetUsersList()
+    {
+        var users = await userService.GetAllUsersAsync();
+        return Ok(users);
     }
 }
