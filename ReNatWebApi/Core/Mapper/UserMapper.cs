@@ -29,10 +29,5 @@ public class UserMapper : Profile
                     new CultureInfo("uk"))))
             .ForMember(opt => opt.Roles, opt =>
                 opt.MapFrom(x => x.UserRoles!.Select(ur => ur.Role.Name).ToArray()));
-
-        // User mapping (для відображення інформації про користувача)
-        //CreateMap<UserEntity, UserModel>()
-            //.ForMember(dest => dest.Roles, opt => opt.Ignore());
-        //CreateMap<UserModel, UserEntity>();
     }
 }

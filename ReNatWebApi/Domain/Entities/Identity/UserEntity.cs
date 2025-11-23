@@ -11,5 +11,6 @@ public class UserEntity : IdentityUser<long>
 
     public virtual ICollection<UserRoleEntity>? UserRoles { get; set; }
     public virtual ICollection<UserLoginEntity>? UserLogins { get; set; }
+    public virtual ICollection<PostEntity>? Posts { get; set; }
 
 }
