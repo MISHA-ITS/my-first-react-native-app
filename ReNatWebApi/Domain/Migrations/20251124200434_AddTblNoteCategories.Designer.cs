@@ -3,6 +3,7 @@ using System;
 using Domain;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Domain.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251124200434_AddTblNoteCategories")]
+    partial class AddTblNoteCategories
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -200,49 +203,6 @@ namespace Domain.Migrations
                     b.ToTable("tblNoteCategories");
                 });
 
-            modelBuilder.Entity("Domain.Entities.NoteEntity", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
-
-                    b.Property<long>("CategoryId")
-                        .HasColumnType("bigint");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime?>("Deadline")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Description")
-                        .HasColumnType("text");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(250)
-                        .HasColumnType("character varying(250)");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("integer");
-
-                    b.Property<long?>("UserEntityId")
-                        .HasColumnType("bigint");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CategoryId");
-
-                    b.HasIndex("UserEntityId");
-
-                    b.ToTable("tblNotes");
-                });
-
             modelBuilder.Entity("Domain.Entities.PostEntity", b =>
                 {
                     b.Property<long>("Id")
@@ -384,21 +344,6 @@ namespace Domain.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("Domain.Entities.NoteEntity", b =>
-                {
-                    b.HasOne("Domain.Entities.NoteCategoryEntity", "Category")
-                        .WithMany("Notes")
-                        .HasForeignKey("CategoryId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Domain.Entities.Identity.UserEntity", null)
-                        .WithMany("Notes")
-                        .HasForeignKey("UserEntityId");
-
-                    b.Navigation("Category");
-                });
-
             modelBuilder.Entity("Domain.Entities.PostEntity", b =>
                 {
                     b.HasOne("Domain.Entities.Identity.UserEntity", "User")
@@ -446,18 +391,11 @@ namespace Domain.Migrations
                 {
                     b.Navigation("NoteCategories");
 
-                    b.Navigation("Notes");
-
                     b.Navigation("Posts");
 
                     b.Navigation("UserLogins");
 
                     b.Navigation("UserRoles");
-                });
-
-            modelBuilder.Entity("Domain.Entities.NoteCategoryEntity", b =>
-                {
-                    b.Navigation("Notes");
                 });
 #pragma warning restore 612, 618
         }

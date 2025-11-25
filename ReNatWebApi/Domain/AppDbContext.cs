@@ -13,6 +13,7 @@ public class AppDbContext : IdentityDbContext<UserEntity, RoleEntity, long,
     public AppDbContext(DbContextOptions<AppDbContext> opt) : base(opt) { }
 
     public DbSet<PostEntity> Posts { get; set; }
+    public DbSet<NoteCategoryEntity> NoteCategories { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
