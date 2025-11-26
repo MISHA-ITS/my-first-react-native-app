@@ -123,6 +123,7 @@ builder.Services.AddScoped<IImageService, ImageService>();
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 builder.Services.AddScoped<IPostService, PostService>();
 builder.Services.AddScoped<INoteCategoryService, NoteCategoryService>();
+builder.Services.AddScoped<INoteService, NoteService>();
 
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
